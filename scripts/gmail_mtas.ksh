@@ -16,18 +16,18 @@ do
 done
 
 set -A netblocks $(dig $SPFHOST txt +short | \
-    sed -e 's/.*"v=spf1 //' \
+    sed -e 's/^"v=spf1 //' \
         -e 's/include://g'  \
-	-e 's/\~all"//'     \
+	-e 's/\~all"$//'     \
 )
 
 for nb in ${netblocks[@]}
 do
     set -A txt $(dig $nb txt +short | \
 	grep -v ip6	     |	\
-	sed -e 's/.*"v=spf1//'	\
+	sed -e 's/^"v=spf1//'	\
 	    -e 's/ip4://g'      \
-	    -e 's/\~all"//'	\
+	    -e 's/\~all"$//'	\
     )
 
     for addr in ${txt[@]}
@@ -39,7 +39,7 @@ do
         then
 	    echo $addr >> $OUTPUT
 	else
-	    echo "Insufficient priviges"
+	    echo "Insufficient privileges"
 	    exit
         fi
     done
