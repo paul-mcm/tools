@@ -85,11 +85,11 @@ do
     #Format sockpair as ip address:port number
     # 1st IP
     ip1=$( echo ${sockets[$i]} | sed 's/\.\([0-9]*\)$/:\1/g' )
-    (( i = i + 1 ))
+    ((i++))
 
     # 2nd IP
     ip2=$( echo ${sockets[$i]} | sed 's/\.\([0-9]*\)$/:\1/g' )
-    (( i = i + 1 ))
+    ((i++))
 
     if ! $TEST 
     then
