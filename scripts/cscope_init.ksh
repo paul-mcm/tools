@@ -20,7 +20,7 @@ then
     exit 1
 fi
 
-find ./ -name "*.c" -o -name -o -name "*.h" > $FILES
+find ./ -name "*.c" -o -name "*.h" > $FILES
 if [ $? -ne 0 ]
 then
     echo "find error"
