@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     struct dirent *e;
     DIR *dptr;
     char *f;
-    int slen, i, ch;
+    int slen, r, ch;
 
     if ( argc == 1 || argc > 4) {
 	printf("Wrong # of args: %d\n", argc);
@@ -71,8 +71,10 @@ int main(int argc, char *argv[]) {
 	    dst[strlen(dst) + 1 ] = '\0';
 	}
 
-	if (format_name(f, dst) > 0 && rename_file(src, dst) != 0)
+	if (format_name(f, dst) <= 0)
 	    printf("%s doesn't contain bad chars\n", f);
+	else if (rename_file(src, dst) != 0)
+	    exit(1);
 
 	exit(0);
     }
