@@ -18,6 +18,7 @@
 
 int rename_file(char *, char *);
 int format_name(char *, char *);
+void help(void);
 
 int test = FALSE;
 
@@ -30,22 +31,23 @@ int main(int argc, char *argv[]) {
     char *f;
     int slen, i, ch;
 
-    if ( argc == 2 ) {
-	strlcpy(src, argv[1], PATH_SIZE);
-    } else if ( argc == 3 ) {
-	while ((ch = getopt(argc, argv, ":n")) != -1) {       
-	    switch (ch) {
-		case 'n': test = TRUE;
-			  break;
-		case '?': printf("bad arg\n");
-			  exit(-1);
-	    }
-	}
-	strlcpy(src, argv[2], PATH_SIZE);	
-    } else {
-	printf("bad args\n");
-	exit(-1);
+    if ( argc == 1 || argc > 4) {
+	printf("Wrong # of args: %d\n", argc);
+	exit(1);
     }
+
+    while ((ch = getopt(argc, argv, ":hn")) != -1) {
+	switch (ch) {
+	    case 'n': test = TRUE;
+		break;
+	    case 'h': help();
+		exit(0);
+	    case '?': printf("invalid option\n");
+		exit(-1);
+	}
+    }
+
+    strlcpy(src, argv[optind], PATH_SIZE);
 
     if (stat(src, &sb) < 0) {
 	printf("stat error for %s: %s\n", argv[1], strerror(errno));
@@ -127,16 +129,17 @@ int rename_file(char *s, char *d) {
 	printf("rename %s\t-->\t%s\n", s, d);
 	return(0);
     }
-
     if ((stat(d, &sb)) == 0) {
 	printf("Error: %s already exists\n", d);
 	return -1;
     }
-    
     if ((rename(s, d)) < 0) {
 	printf("Error renaming %s: %s\n", s, strerror(errno));
 	return -1;
     }
-
     return 0;
+}
+
+void help(void) {
+    printf("Use -n option for testing\n");
 }
