@@ -1,7 +1,7 @@
 CC = clang
 UNAME := $(shell uname)
 #DEBUGFLAGS = -D DEBUG -g
-INSTALL_DIR = $HOME/local/bin/
+INSTALL_DIR = ${HOME}/local/bin/
 LIBDIR = ${HOME}/dev/lib/C/validate_ipv4
 INCLUDES = ${LIBDIR}/include/
 
@@ -12,5 +12,10 @@ validate_ipv4.o:
 
 all: $(objects)
 	$(CC) -I${INCLUDES} $(objects) -o validate_ipv4 validate_ipv4.c
+
 clean:
 	@rm -f $(objects)
+
+install:
+	@mkdir -p ${INSTALL_DIR}
+	@cp validate_ipv4 ${INSTALL_DIR}
