@@ -45,9 +45,9 @@ do
 	i) ip=$OPTARG
 	   ipv4_validate $ip || exit
 	   set -A sockets $($NSTAT $NSTAT_ARGS | \
-		awk '$1 ~ /tcp/ && 	 	 \
-		     $4 ~ /'"$ip"'\./ || 	 \
-		     $5 ~ /'"$ip"'\./ 	 	 \
+		awk '$1 == "tcp" && 	 	 \
+		     ( $4 ~ /^'"$ip"'\./ || 	 \
+		     $5 ~ /^'"$ip"'\./ )	 \
 		     {print $4, $5}')
 	   ;;
 	n) TRACE=true
@@ -55,9 +55,9 @@ do
 	p) port=$OPTARG
 	   validate_port $port || exit
 	   set -A sockets $($NSTAT $NSTAT_ARGS | \
-		awk '$1 ~ /tcp/ && 		 \
-		     $4 ~ /\.'"$port"'$/ || 	 \
-		     $5 ~ /\.'"$port"'$/ 	 \
+		awk '$1 == "tcp" && 		 \
+		     ( $4 ~ /\.'"$port"'$/ || 	 \
+		     $5 ~ /\.'"$port"'$/ ) 	 \
 		     {print $4, $5}')
 	   ;;
 	t) TRACE=true
@@ -70,10 +70,10 @@ do
 	   validate_port $port || exit
 	   ip=${sock%.*}
 	   ipv4_validate $ip || exit
-	   set -A sockets $($NSTAT $NSTAT_ARGS |  \
-		awk '$1 ~ /tcp/ && 		  \
-		     $4 ~ /'"$ip"'\.'"$port"'/ || \
-		     $5 ~ /'"$ip"'\.'"$port"'/ 	  \
+	   set -A sockets $($NSTAT $NSTAT_ARGS |  	\
+		awk '$1 == "tcp" && 		  	\
+		     ( $4 == "'"$ip"'.'"$port"'" || 	\
+		     $5 == "'"$ip"."$port"'" )		\
 		     {print $4, $5}')
 	   ;;
 	?) echo "try again..." && exit
@@ -120,7 +120,7 @@ do
 	    echo "Error disconnecting $ip1 $ip2" && exit
 	fi
      else
-	echo "$DROP_CMD $ip1\t$ip2"
+	echo "$DROP_CMD\t$ip1\t$ip2"
     fi
 done
 
