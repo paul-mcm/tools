@@ -6,10 +6,11 @@ BASE_DIR="${HOME}/tmp/OpenBSD${V}"
 URL=$(cat /etc/installurl)
 CHKSUM=SHA256
 SHA_SIG=SHA256.sig
-Trace=true 
-#set -x
+Trace=false
+Test=false
+prog=${0##*/}
 
-set -A amd64 \
+set -A amd64_set \
     INSTALL.amd64 \
     SHA256	\
     SHA256.sig  \
@@ -25,7 +26,7 @@ set -A amd64 \
     xserv75.tgz	\
     xshare75.tgz \
 
-set -A i386 \
+set -A i386_set \
     INSTALL.i386 \
     SHA256	\
     SHA256.sig	\
@@ -38,11 +39,13 @@ set -A i386 \
     xbase75.tgz	
 
 function fetch_index {
+    $Trace && set -x
     typeset a=$1
     wget ${URL}/${V}/${a}/index.txt
 }
 
 function fetch {
+    $Trace && set -x
     typeset a=$1
     typeset p=$2
 
@@ -61,41 +64,77 @@ function fetch {
     fi
 }
 
-##################
-### START MAIN
-##################
-for p_set in i386 amd64
-do
-    [ -d ${BASE_DIR}/$p_set ] || mkdir -p ${BASE_DIR}/$p_set
+function getset {
+    $Trace && set -x
+    typeset a
+    a=$1
+
+    [ -d ${BASE_DIR}/$a ] || mkdir -p ${BASE_DIR}/$a
     if [ $? -ne 0 ]
     then
-	echo "Failed to create dir ${BASE_DIR}/$p_set"
+	echo "Failed to create dir ${BASE_DIR}/$a"
  	exit 1
     fi
 
-    cd ${BASE_DIR}/$p_set
-    if [[ $PWD != ${BASE_DIR}/$p_set ]]
+    cd ${BASE_DIR}/$a
+    if [[ $PWD != "${BASE_DIR}/$a" ]]
     then
-	echo "failed to cd to ${BASE_DIR}/$p_set"
+	echo "failed to cd to ${BASE_DIR}/$a"
+	echo "$PWD"
 	exit
     fi
 
     if [[ ! -f index.txt ]]
     then
 	echo "Fetching index.txt"
-	fetch_index $p_set
+	fetch_index $a
     fi
 
-    pet="\${${p_set}[@]}"
+    pset="\${${a}_set[@]}"
 
-    for pkg in $(eval "echo ${pet[@]}")
-    do
-	if ($Trace)
-	then
-	    echo "$p_set:\t$pkg"
-	else
+    if [ $Test ]
+    then
+	eval "echo ${pset[@]}" | tr ' ' '\n'
+    else
+	for pkg in $(eval "echo ${pset[@]}")
+	do
 	    fetch $pkg
-	fi
-    done
+	done
+    fi
+}
+
+##################
+### START MAIN
+##################
+while getopts :a:hnt VAR 2> /dev/null
+do
+    case $VAR in
+	a) arch=$OPTARG
+	   ;;
+	h) continue
+	   ;;
+	n) Test=true
+	   ;;
+	t) Trace=true
+	   echo "Tracing $prog"
+	   PS4='[$LINENO]: '
+	   set -x
+	   ;;
+	?) echo "error"
+	   exit
+	   ;;
+    esac
 done
+
+if [ $arch == amd64 -o $arch == i386 ]
+then
+    getset $arch
+else
+    echo "missing or bad input"
+    exit
+fi
+
+
+exit
+
 
