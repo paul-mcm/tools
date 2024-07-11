@@ -53,6 +53,7 @@ do
 	h) help
 	   ;;
 	i) ip=$OPTARG
+	   ipv4_validate $ip || exit
 	   set -A sockets $($NSTAT $NSTAT_ARGS | \
 		awk '$1 == "tcp" && 	 	 \
 		$4 ~ /^'"$ip"'\./ ||		\
@@ -102,25 +103,32 @@ then
     echo "Error: incomplete socket pair" && exit
 fi
 
-i=0;
+i=0
 
 while (( i < ${#sockets[@]} ))
 do
-    #Format sockpair as ip address:port number
+    # Reformat sockets as ip address:port number
     # 1st IP
-    ip1=$( echo ${sockets[$i]} | sed 's/\.\([0-9]*\)$/:\1/g' )
-    ((i++))
+    sockets[$i]=$( echo ${sockets[((i++))]} | \
+	sed 's/\.\([0-9]*\)$/:\1/g')
 
     # 2nd IP
-    ip2=$( echo ${sockets[$i]} | sed 's/\.\([0-9]*\)$/:\1/g' )
+    sockets[$i]=$( echo ${sockets[$i]} | \
+	sed 's/\.\([0-9]*\)$/:\1/g')
     ((i++))
+done
 
-    if ! $Trace
+i=0
+
+if ! $Trace
+then
+    if [[ $(/usr/bin/id -g) -ne 0 ]]
     then
-	if [[ $(/usr/bin/id -g) -ne 0 ]]
-	then
-	   echo "You need to be root" && exit
-	fi
+	echo "You need to be root" && exit
+    fi
+
+    while (( i < ${#sockets[@]} ))
+    do
 	$($DROP_CMD $ip1 $ip2 > /dev/null)
 	if [[ $? -eq 0 ]]
 	then
@@ -128,9 +136,12 @@ do
 	else
 	    echo "Error disconnecting $ip1 $ip2" && exit
 	fi
-     else
-	echo "$DROP_CMD\t$ip1\t$ip2"
-    fi
-done
-
+    done
+else
+    while (( i < ${#sockets[@]} ))
+    do
+	echo "$DROP_CMD\t${sockets[((i++))]}\t${sockets[$i]}"
+	((i++))
+    done
+fi
 exit
