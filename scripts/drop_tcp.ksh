@@ -108,11 +108,6 @@ i=0
 while (( i < ${#sockets[@]} ))
 do
     # Reformat sockets as ip address:port number
-    # 1st IP
-    sockets[$i]=$( echo ${sockets[((i++))]} | \
-	sed 's/\.\([0-9]*\)$/:\1/g')
-
-    # 2nd IP
     sockets[$i]=$( echo ${sockets[$i]} | \
 	sed 's/\.\([0-9]*\)$/:\1/g')
     ((i++))
@@ -122,26 +117,21 @@ i=0
 
 if ! $Trace
 then
-    if [[ $(/usr/bin/id -g) -ne 0 ]]
+    if [ $(/usr/bin/id -g) -ne 0 ]
     then
-	echo "You need to be root" && exit
+	echo "Requires root privileges"
+	exit
     fi
 
     while (( i < ${#sockets[@]} ))
     do
-	$($DROP_CMD $ip1 $ip2 > /dev/null)
-	if [[ $? -eq 0 ]]
-	then
-	    echo "Dropped $ip1\t\t$ip2"
-	else
-	    echo "Error disconnecting $ip1 $ip2" && exit
-	fi
+	$DROP_CMD ${sockets[ ((i++)) ]} ${sockets[ ((i++)) ]}
+	[[ $? -ne 0 ]] && exit
     done
 else
     while (( i < ${#sockets[@]} ))
     do
-	echo "$DROP_CMD\t${sockets[((i++))]}\t${sockets[$i]}"
-	((i++))
+	echo "$DROP_CMD\t${sockets[ ((i++)) ]} \t${sockets[ ((i++)) ]}"
     done
 fi
 exit
