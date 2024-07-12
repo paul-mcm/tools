@@ -2,23 +2,24 @@
 
 # Get output from netstat
 # Input is socket pairs (ie., ip.port) stored consecutively 
-# array @sockets
+# array @sockets.
 #
 
-FPATH='./lib/'
+FPATH='/home/paul/scripts/lib'
 NSTAT='/usr/bin/netstat'
 NSTAT_ARGS='-nf inet -p tcp'
 DROP_CMD='/usr/sbin/tcpdrop'
+RUNDIR="/home/paul/scripts"
+
+Prog=${0##*/}
 Trace=false
 
-prog=${0##*/}
-args="$*"
-autoload
+autoload  # load $FPATH
 
 function help {
     echo
     cat >&2 <<ENDUSAGE
-    $prog - wrapper script for tcpdrop(8) command
+    $Prog - wrapper script for tcpdrop(8) command
 
     -h			-	display this 'help' section
     -i ipv4 addr	-	drop all connections to ipv4 addr
@@ -30,7 +31,7 @@ function help {
 
 ENDUSAGE
 
-    exit
+     exit
 }
 
 if [[ $# -lt 1 ]]
@@ -39,12 +40,19 @@ then
 fi
 
 # Find & turn on tracing flag asap
-if  [[ $(expr "${args}" : ".*-t.*") -gt 0 ]]
+if  [[ $(expr "${*}" : ".*-t.*") -gt 0 ]]
 then
     Trace=true
-    echo "Tracing $prog"
+    echo "Tracing $Prog"
     PS4='[$LINENO]: '
     set -x
+fi
+
+cd $RUNDIR
+if [[ "$PWD" != $RUNDIR ]]
+then
+    echo "Unable to CD to $RUNDIR"
+    exit
 fi
 
 while getopts :hni:p:s:t VAR 2> /dev/null
@@ -117,7 +125,7 @@ i=0
 
 if ! $Trace
 then
-    if [ $(/usr/bin/id -g) -ne 0 ]
+    if [ $(/usr/bin/id -u) -ne 0 ]
     then
 	echo "Requires root privileges"
 	exit
