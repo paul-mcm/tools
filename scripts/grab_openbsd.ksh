@@ -66,8 +66,7 @@ function fetch {
 
 function getset {
     $Trace && set -x
-    typeset a
-    a=$1
+    typeset a=$1
 
     [ -d ${BASE_DIR}/$a ] || mkdir -p ${BASE_DIR}/$a
     if [ $? -ne 0 ]
@@ -80,7 +79,6 @@ function getset {
     if [[ $PWD != "${BASE_DIR}/$a" ]]
     then
 	echo "failed to cd to ${BASE_DIR}/$a"
-	echo "$PWD"
 	exit
     fi
 
@@ -90,13 +88,11 @@ function getset {
 	fetch_index $a
     fi
 
-    pset="\${${a}_set[@]}"
-
     if [ $Test ]
     then
-	eval "echo ${pset[@]}" | tr ' ' '\n'
+	eval "echo \${${a}_set[@]}" | tr ' ' '\n'
     else
-	for pkg in $(eval "echo ${pset[@]}")
+	for pkg in $(eval "echo \${${a}_set[@]}")
 	do
 	    fetch $pkg
 	done
@@ -116,6 +112,7 @@ do
 	n) Test=true
 	   ;;
 	t) Trace=true
+	   Test=true
 	   echo "Tracing $prog"
 	   PS4='[$LINENO]: '
 	   set -x
