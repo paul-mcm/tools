@@ -1,6 +1,6 @@
 #!/bin/ksh 
 
-MPLY='/usr/local/bin/mpalyer'
+MPLY='/usr/local/bin/mplayer'
 Prog=${0##*/}
 
 function pkg_search {
@@ -110,6 +110,7 @@ function lib_lookup {
 
 function serial_connect {
     /usr/bin/cu -s 19200 -l /dev/ttyU0
+    exit
 }
 
 case $Prog in
@@ -137,7 +138,7 @@ case $Prog in
     libl)	lib_lookup $1
 		exit
 		;;
-    cu)		serial_connect
+    scon)	serial_connect
 		exit
 		;;
 esac
