@@ -2,8 +2,28 @@
 
 REPO_DIR="${HOME}/dev/tools/scripts"
 RUN_DIR=${REPO_DIR}
-#SCRIPT_DIR="${HOME}/scripts"
-SCRIPT_DIR="${HOME}/tmp" # for testing
+SCRIPT_DIR="${HOME}/scripts"
+#SCRIPT_DIR="${HOME}/tmp" # for testing
+
+set -A scripts		\
+    agent_setup.ksh	\
+    cscope_init.ksh	\
+    drop_tcp.ksh	\
+    grab_openbsd.ksh	\
+    iprange.pl		\
+    misc_commands.ksh	\
+    tips.pl
+
+set -A links	\
+    addnum	\
+    bat		\
+    clean	\
+    scon	\
+    dfunk	\
+    libl	\
+    pkgs	\
+    radiotre	\
+    radiouno
 
 function install {
     typeset f=$1
@@ -85,25 +105,6 @@ function compare {
     done
     
 }
-
-set -A scripts		\
-    agent_setup.ksh	\
-    cscope_init.ksh	\
-    drop_tcp.ksh	\
-    grab_openbsd.ksh	\
-    iprange.pl		\
-    misc_commands.ksh	\
-    tips.pl
-
-set -A links	\
-    addnum	\
-    bat		\
-    clean	\
-    dfunk	\
-    libl	\
-    pkgs	\
-    radiotre	\
-    radiouno
 
 cd $RUN_DIR
 if [[ "$PWD" != $RUN_DIR ]]
