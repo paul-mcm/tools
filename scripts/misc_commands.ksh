@@ -108,31 +108,38 @@ function lib_lookup {
     exit
 }
 
+function serial_connect {
+    /usr/bin/cu -s 19200 -l /dev/ttyU0
+}
+
 case $Prog in
-    pkgs) pkg_search $1
-	  exit
-	  ;;
-    addnum) addup
-	  exit
-	  ;;
-    bat) battery_chk
-	  exit
-	  ;;
-    clean) remove_backup_files
-	  exit
-	  ;;
-    radiouno) mplay_radiouno
-	    exit
-	    ;;
-    radiotre) mplay_radiotre
-	    exit
-	    ;;
-    dfunk) mplay_deutschlandfunk
-	    exit
-	    ;;
-    libl) lib_lookup $1
-	 exit
-	 ;;
+    pkgs)	pkg_search $1
+		exit
+		;;
+    addnum)	addup
+		exit
+		;;
+    bat)	battery_chk
+		exit
+		;;
+    clean)	remove_backup_files
+		exit
+		;;
+    radiouno)	mplay_radiouno
+		exit
+		;;
+    radiotre)	mplay_radiotre
+		exit
+		;;
+    dfunk)	mplay_deutschlandfunk
+		exit
+		;;
+    libl)	lib_lookup $1
+		exit
+		;;
+    cu)		serial_connect
+		exit
+		;;
 esac
 
 exit
