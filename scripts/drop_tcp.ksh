@@ -34,13 +34,16 @@ ENDUSAGE
      exit
 }
 
+#############
+## START MAIN
+#############
 if [[ $# -lt 1 ]]
 then
     echo "invalid args" && exit
 fi
 
 # Find & turn on tracing flag asap
-if  [[ $(expr "${*}" : ".*-t.*") -gt 0 ]]
+if  [[ $(expr "${*}" : ".*t.*") -gt 0 ]]
 then
     Trace=true
     echo "Tracing $Prog"
