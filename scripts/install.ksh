@@ -5,6 +5,9 @@ RUN_DIR=${REPO_DIR}
 SCRIPT_DIR="${HOME}/scripts"
 #SCRIPT_DIR="${HOME}/tmp" # for testing
 
+Prog=${0#*/}
+Trace=false
+
 set -A scripts		\
     agent_setup.ksh	\
     cscope_init.ksh	\
@@ -25,8 +28,28 @@ set -A links	\
     radiotre	\
     radiouno
 
+function help {
+    echo
+    cat >&2 <<ENDUSAGE
+    $Prog - install scripts from repo to local dirs
+
+    -c			-	compare mod times in repo w/ script dir
+    -h                  -       display this 'help' section
+    -i 		        -       install scripts and make file system links
+    -l 		        -       make file system links
+    -n                  -       
+    -p			-	set perms on install files
+    -t tracing          -       same as -n, also sets 'xtrace'
+
+ENDUSAGE
+
+     exit
+}
+
 function install {
+    $Trace && set -x
     typeset f=$1
+
     cp $f $SCRIPT_DIR
     if [ $? -ne 0 ]
     then
@@ -36,21 +59,54 @@ function install {
 }
 
 function install_all {
+    $Trace && set -x
     typeset i;
+
     for i in ${scripts[@]}
     do
 	install $i
     done
 }
 
-function make_links {
+function rm_links {
+    $Trace && set -x
     typeset l
 
     for l in ${links[@]}
     do
-	[ -f ${SCRIPT_DIR}/$l ] && continue
+        if [ -f ${SCRIPT_DIR}/$l ]
+        then   
+            rm ${SCRIPT_DIR}/$l
+            if [ $? -ne 0 ]
+            then
+                echo "Error removing old link: $l"
+                exit
+            fi
+        fi
+    done
+}
 
-	ln ${SCRIPT_DIR}/misc_commands.ksh ${SCRIPT_DIR}/$l
+function make_links {
+    $Trace && set -x
+    typeset f='misc_commands.ksh'
+    typeset l
+
+    rm_links
+
+    if [ ! -f ${SCRIPT_DIR}/$f ]
+    then
+	echo "File $f not in dir.  Copying file from repo."
+	cp ${REPO_DIR}/$f ${SCRIPT_DIR}/
+	if [ $? -ne 0 ]
+	then
+	    echo "failed to copy $f to $SCRIPT_DIR"
+	    exit
+	fi
+    fi
+
+    for l in ${links[@]}
+    do
+	ln ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l
 	if [ $? -ne 0 ]
 	then
 	    echo "Error making link for $l"
@@ -60,6 +116,7 @@ function make_links {
 }
 
 function compare {
+    $Trace && set -x
 
     for s in ${scripts[@]}
     do
@@ -91,6 +148,8 @@ function compare {
 }
 
 function set_perms {
+    $Trace && set -x
+
     cd $SCRIPT_DIR 
     if [[ "$PWD" != $SCRIPT_DIR ]]
     then
@@ -106,6 +165,23 @@ function set_perms {
     fi
 }
 
+#################
+## START MAIN CODE
+#################
+if [[ $# -lt 1 ]]
+then
+    echo "needs at leat 1 arg" && exit
+fi
+
+# Find & turn on tracing flag asap
+if  [[ $(expr "${*}" : ".*t.*") -gt 0 ]]
+then
+    Trace=true
+    echo "Tracing $Prog"
+    PS4='[$LINENO]: '
+    set -x
+fi
+
 cd $RUN_DIR
 if [[ "$PWD" != $RUN_DIR ]]
 then
@@ -113,10 +189,15 @@ then
     exit
 fi
 
-while getopts :cilps VAR 2> /dev/null
+
+
+while getopts :chilprt VAR 2> /dev/null
 do
     case $VAR in
 	c) compare
+	   exit
+	   ;;
+	h) help
 	   exit
 	   ;;
 	i) install_all
@@ -127,6 +208,15 @@ do
 	   set_perms ${links[@]}
 	   ;;
 	p) set_perms ${links[@]} ${scripts[@]}
+	   exit
+	   ;;
+	r) rm_links
+	   exit
+	   ;;
+	t) continue #checked for -t above
+	   ;;
+	?) echo "Bad option"
+	   exit
 	   ;;
     esac
 done
