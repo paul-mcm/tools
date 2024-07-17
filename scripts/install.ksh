@@ -45,33 +45,18 @@ function install_all {
 
 function make_links {
     typeset l
-    typeset file=misc_commands.ksh
 
     for l in ${links[@]}
     do
 	[ -f ${SCRIPT_DIR}/$l ] && continue
 
-	ln ${SCRIPT_DIR}/$file ${SCRIPT_DIR}/$l
+	ln ${SCRIPT_DIR}/misc_commands.ksh ${SCRIPT_DIR}/$l
 	if [ $? -ne 0 ]
 	then
 	    echo "Error making link for $l"
 	    exit
 	fi
     done
-    cd $SCRIPT_DIR 
-    if [[ "$PWD" != $SCRIPT_DIR ]]
-    then
-	echo "Unable to CD to $SCRIPT_DIR"
-	exit
-    fi
-
-    chmod 700 ${links[@]}
-    if [ $? -ne 0 ]
-    then
-	echo "failure setting perms for links in script dir"
-	exit
-    fi
-    exit
 }
 
 function compare {
@@ -102,8 +87,23 @@ function compare {
 	else
 	    echo "$s modified ahead of repo"
 	fi
-    done
-    
+    done    
+}
+
+function set_perms {
+    cd $SCRIPT_DIR 
+    if [[ "$PWD" != $SCRIPT_DIR ]]
+    then
+	echo "Unable to CD to $SCRIPT_DIR"
+	exit
+    fi
+
+    chmod 700 $@
+    if [ $? -ne 0 ]
+    then
+	echo "failure setting perms for links in script dir"
+	exit
+    fi
 }
 
 cd $RUN_DIR
@@ -113,7 +113,7 @@ then
     exit
 fi
 
-while getopts :cils VAR 2> /dev/null
+while getopts :cilps VAR 2> /dev/null
 do
     case $VAR in
 	c) compare
@@ -121,10 +121,12 @@ do
 	   ;;
 	i) install_all
 	   make_links
-	   exit
+	   set_perms ${links[@]} ${scripts[@]}
 	   ;;
 	l) make_links
-	   exit
+	   set_perms ${links[@]}
+	   ;;
+	p) set_perms ${links[@]} ${scripts[@]}
 	   ;;
     esac
 done
@@ -139,7 +141,5 @@ then
 	exit
     fi
 fi
-
-chmod 744 ${SCRIPT_DIR}/*
 
 exit
