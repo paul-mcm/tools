@@ -2,6 +2,7 @@
 
 REPO_DIR="${HOME}/dev/tools/scripts"
 RUN_DIR=${REPO_DIR}
+RGEX='(^| +)-[a-s,u-z]*t[a-s,u-z]* *'                                 
 SCRIPT_DIR="${HOME}/scripts"
 #SCRIPT_DIR="${HOME}/tmp" # for testing
 
@@ -39,7 +40,9 @@ function help {
     -l 		        -       make file system links
     -n                  -       
     -p			-	set perms on install files
-    -t tracing          -       same as -n, also sets 'xtrace'
+    -r			-	remove hard links to misc_commands.ksh
+    -s [script]		-	install specific script from repo
+    -t			-       turns on tracing to debug
 
 ENDUSAGE
 
@@ -49,6 +52,12 @@ ENDUSAGE
 function install {
     $Trace && set -x
     typeset f=$1
+
+    if [ ! -f $f ]
+    then
+	echo "$f not in repo dir"
+	return 1
+    fi
 
     cp $f $SCRIPT_DIR
     if [ $? -ne 0 ]
@@ -71,18 +80,17 @@ function install_all {
 function rm_links {
     $Trace && set -x
     typeset l
-
     for l in ${links[@]}
     do
-        if [ -f ${SCRIPT_DIR}/$l ]
-        then   
-            rm ${SCRIPT_DIR}/$l
-            if [ $? -ne 0 ]
-            then
-                echo "Error removing old link: $l"
-                exit
-            fi
-        fi
+	if [ -f ${SCRIPT_DIR}/$l ]
+	then   
+	    rm -r ${SCRIPT_DIR}/$l
+	    if [ $? -ne 0 ]
+	    then
+		echo "Error removing old link: $l"
+		exit
+	    fi
+	fi
     done
 }
 
@@ -106,7 +114,7 @@ function make_links {
 
     for l in ${links[@]}
     do
-	ln ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l
+	ln -s ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l
 	if [ $? -ne 0 ]
 	then
 	    echo "Error making link for $l"
@@ -135,14 +143,14 @@ function compare {
 	    continue
 	fi
 	
-	t_f1=$(stat -f "%c" $f1)
-	t_f2=$(stat -f "%c" $f2)
+	t_f1=$(stat -f "%m" $f1)
+	t_f2=$(stat -f "%m" $f2)
 
 	if [[ $t_f1 -gt $t_f2 ]]
 	then
-	    echo "$s ahead of install"
+	    echo "repo ahead of install for $s"
 	else
-	    echo "$s modified ahead of repo"
+	    echo "install modified ahead of repo for $s"
 	fi
     done    
 }
@@ -174,13 +182,20 @@ then
 fi
 
 # Find & turn on tracing flag asap
-if  [[ $(expr "${*}" : ".*t.*") -gt 0 ]]
+echo "$@" | grep -E -e "$RGEX" > /dev/null 2>&1       
+if  [[ $? -eq 0 ]]
 then
     Trace=true
     echo "Tracing $Prog"
-    PS4='[$LINENO]: '
+    PS4='$LINENO:	'
     set -x
 fi
+
+if [[ ! -d $REPO_DIR || ! -d $RUN_DIR || ! -d $SCRIPT_DIR ]]
+then
+    echo "Missing directories"
+    exit
+fi	
 
 cd $RUN_DIR
 if [[ "$PWD" != $RUN_DIR ]]
@@ -189,9 +204,7 @@ then
     exit
 fi
 
-
-
-while getopts :chilprt VAR 2> /dev/null
+while getopts :chilprs:t VAR 2> /dev/null
 do
     case $VAR in
 	c) compare
@@ -211,6 +224,9 @@ do
 	   exit
 	   ;;
 	r) rm_links
+	   exit
+	   ;;
+	s) install $OPTARG
 	   exit
 	   ;;
 	t) continue #checked for -t above
