@@ -10,6 +10,7 @@ NSTAT='/usr/bin/netstat'
 NSTAT_ARGS='-nf inet -p tcp'
 DROP_CMD='/usr/sbin/tcpdrop'
 RUNDIR="/home/paul/scripts"
+RGEX='(^| +)-[a-s,u-z]*t[a-s,u-z]* *'
 
 Prog=${0##*/}
 Trace=false
@@ -43,11 +44,12 @@ then
 fi
 
 # Find & turn on tracing flag asap
-if  [[ $(expr "${*}" : ".*t.*") -gt 0 ]]
+echo "$@" | grep -E -e "$RGEX" > /dev/null 2>&1       
+if  [[ $? -eq 0 ]]
 then
     Trace=true
     echo "Tracing $Prog"
-    PS4='[$LINENO]: '
+    PS4='$LINENO:       '
     set -x
 fi
 
