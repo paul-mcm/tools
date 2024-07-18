@@ -28,21 +28,23 @@ set -A links	\
     ll		\
     pkgs	\
     radiotre	\
-    radiouno
+    radiouno	\
+    tg7		\
+    wapoc	
 
 function help {
     echo
     cat >&2 <<ENDUSAGE
     $Prog - install scripts from repo to local dirs
 
+    -a			-	install all scripts and make links
     -c			-	compare mod times in repo w/ script dir
     -h                  -       display this 'help' section
-    -i 		        -       install scripts and make file system links
+    -i script	 	-       install script from repo
     -l 		        -       make file system links
     -n                  -       
     -p			-	set perms on install files
     -r			-	remove hard links to misc_commands.ksh
-    -s [script]		-	install specific script from repo
     -t			-       turns on tracing to debug
 
 ENDUSAGE
@@ -86,11 +88,7 @@ function rm_links {
 	if [ -f ${SCRIPT_DIR}/$l ]
 	then   
 	    rm -r ${SCRIPT_DIR}/$l
-	    if [ $? -ne 0 ]
-	    then
-		echo "Error removing old link: $l"
-		exit
-	    fi
+	    [ $? -ne 0 ] && echo "Error removing old link: $l"
 	fi
     done
 }
@@ -113,11 +111,10 @@ function make_links {
 
     for l in ${links[@]}
     do
-	ln -s ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l
-	if [ $? -ne 0 ]
-	then
-	    echo "Error making link for $l"
-	    exit
+	if [ ! -h ${SCRIPT_DIR}/$l ] 
+	then 
+	    ln -s ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l
+	    [ $? -ne 0 ] && echo "Error making link for $l"
 	fi
     done
 }
@@ -137,10 +134,7 @@ function compare {
 	f2="${SCRIPT_DIR}/$s"
 
 	diff -q $f1 $f2 > /dev/null
-	if [ $? -eq 0 ]
-	then
-	    continue
-	fi
+	[ $? -eq 0 ] && continue
 	
 	t_f1=$(stat -f "%m" $f1)
 	t_f2=$(stat -f "%m" $f2)
@@ -202,18 +196,22 @@ then
     exit
 fi
 
-while getopts :chilprs:t VAR 2> /dev/null
+while getopts :achi:lpr:t VAR 2> /dev/null
 do
     case $VAR in
+	a) install_all
+	   make_links
+	   set_perms ${links[@]} ${scripts[@]}
+	   ;;
 	c) compare
 	   exit
 	   ;;
 	h) help
 	   exit
 	   ;;
-	i) install_all
-	   make_links
-	   set_perms ${links[@]} ${scripts[@]}
+	i) install $OPTARG
+	   set_perms $OPTARG
+	   exit
 	   ;;
 	l) make_links
 	   set_perms ${links[@]}
@@ -222,10 +220,6 @@ do
 	   exit
 	   ;;
 	r) rm_links
-	   exit
-	   ;;
-	s) install $OPTARG
-	   set_perms $OPTARG
 	   exit
 	   ;;
 	t) continue #checked for -t above
