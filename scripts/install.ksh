@@ -82,12 +82,8 @@ function install_all {
     if [ ! -h ${SCRIPT_DIR}/lib ]
     then
 	echo "Creating link libs"
-	ln -s ${HOME}/dev/lib/shell ${SCRIPT_DIR}/lib
-	if [ $? -ne 0 ]
-	then
+	ln -s ${HOME}/dev/lib/shell ${SCRIPT_DIR}/lib || \
 	    echo "Error making link for $l"
-	    exit
-	fi
     fi
 }
 
@@ -98,8 +94,8 @@ function rm_links {
     do
 	if [ -f ${SCRIPT_DIR}/$l ]
 	then   
-	    rm -r ${SCRIPT_DIR}/$l
-	    [ $? -ne 0 ] && echo "Error removing old link: $l"
+	    rm -r ${SCRIPT_DIR}/$l || \
+		echo "Error removing old link: $l"
 	fi
     done
 }
@@ -116,7 +112,7 @@ function make_links {
 	if [ $? -ne 0 ]
 	then
 	    echo "failed to copy $f to $SCRIPT_DIR"
-	    exit
+	    return 1
 	fi
     fi
 
@@ -124,8 +120,8 @@ function make_links {
     do
 	if [ ! -h ${SCRIPT_DIR}/$l ] 
 	then 
-	    ln -s ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l
-	    [ $? -ne 0 ] && echo "Error making link for $l"
+	    ln -s ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l || \
+		echo "Error making link for $l"
 	fi
     done
 }
@@ -169,13 +165,9 @@ function set_perms {
 	echo "Unable to CD to $SCRIPT_DIR"
 	exit
     fi
-
-    chmod -h 700 $files	 # -h flag for symlinks
-    if [ $? -ne 0 ]
-    then
-	echo "failure setting perms for links in script dir"
-	exit
-    fi
+    # -h flag for symlinks
+    chmod -h 700 $files	|| \
+	echo "failure setting perms for links"
 }
 
 #################
@@ -214,6 +206,7 @@ do
 	a) install_all
 	   make_links
 	   set_perms ${links[@]} ${scripts[@]}
+	   exit
 	   ;;
 	c) compare
 	   exit
