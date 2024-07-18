@@ -3,14 +3,12 @@
 # Get output from netstat
 # Input is socket pairs (ie., ip.port) stored consecutively 
 # array @sockets.
-#
 
-FPATH='/home/paul/scripts/lib'
+FPATH="${HOME}/scripts/lib"
 NSTAT='/usr/bin/netstat'
 NSTAT_ARGS='-nf inet -p tcp'
 DROP_CMD='/usr/sbin/tcpdrop'
 RUNDIR="/home/paul/scripts"
-RGEX='(^| +)-[a-s,u-z]*t[a-s,u-z]* *'
 
 Prog=${0##*/}
 Trace=false
@@ -44,8 +42,7 @@ then
 fi
 
 # Find & turn on tracing flag asap
-echo "$@" | grep -E -e "$RGEX" > /dev/null 2>&1       
-if  [[ $? -eq 0 ]]
+if  $(trace $@)
 then
     Trace=true
     echo "Tracing $Prog"
@@ -144,7 +141,7 @@ then
 else
     while (( i < ${#sockets[@]} ))
     do
-	echo "$DROP_CMD\t${sockets[ ((i++)) ]} \t${sockets[ ((i++)) ]}"
+	echo "$DROP_CMD\t${sockets[ ((i++)) ]}\t${sockets[ ((i++)) ]}"
     done
 fi
 exit

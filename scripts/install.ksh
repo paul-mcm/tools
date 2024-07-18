@@ -1,13 +1,14 @@
 #!/bin/ksh 
 
+FPATH="${HOME}/scripts/lib"
 REPO_DIR="${HOME}/dev/tools/scripts"
 RUN_DIR=${REPO_DIR}
-RGEX='(^| +)-[a-s,u-z]*t[a-s,u-z]* *'                                 
 SCRIPT_DIR="${HOME}/scripts"
 #SCRIPT_DIR="${HOME}/tmp" # for testing
 
-Prog=${0#*/}
+Prog=${0##*/}
 Trace=false
+autoload
 
 set -A scripts		\
     agent_setup.ksh	\
@@ -24,7 +25,7 @@ set -A links	\
     clean	\
     scon	\
     dfunk	\
-    libl	\
+    ll		\
     pkgs	\
     radiotre	\
     radiouno
@@ -180,8 +181,7 @@ then
 fi
 
 # Find & turn on tracing flag asap
-echo "$@" | grep -E -e "$RGEX" > /dev/null 2>&1       
-if  [[ $? -eq 0 ]]
+if $(trace $@)
 then
     Trace=true
     echo "Tracing $Prog"
