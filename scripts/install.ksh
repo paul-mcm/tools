@@ -78,6 +78,17 @@ function install_all {
     do
 	install $i
     done
+
+    if [ ! -h ${SCRIPT_DIR}/lib ]
+    then
+	echo "Creating link libs"
+	ln -s ${HOME}/dev/lib/shell ${SCRIPT_DIR}/lib
+	if [ $? -ne 0 ]
+	then
+	    echo "Error making link for $l"
+	    exit
+	fi
+    fi
 }
 
 function rm_links {
@@ -176,7 +187,7 @@ then
 fi
 
 # Find & turn on tracing flag asap
-if $(trace $@)
+if $(trace $@)  # call trace() function
 then
     Trace=true
     echo "Tracing $Prog"
@@ -230,16 +241,5 @@ do
 	   ;;
     esac
 done
-
-if [ ! -h ${SCRIPT_DIR}/lib ]
-then
-    echo "Creating link libs"
-    ln -s ${HOME}/dev/lib/shell ${SCRIPT_DIR}/lib
-    if [ $? -ne 0 ]
-    then
-	echo "Error making link for $l"
-	exit
-    fi
-fi
 
 exit
