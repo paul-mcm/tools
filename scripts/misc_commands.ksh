@@ -135,6 +135,11 @@ function serial_connect {
 
 function wapo_comments {
     typeset url=$1
+    if [ -z $url ]
+    then
+	echo "Need an arg"
+	exit
+    fi
     HEAD='https://washingtonpost.com/comments?storyUrl='
 
     /usr/local/bin/firefox "${HEAD}$url"
@@ -181,7 +186,7 @@ case $Prog in
     scon)	serial_connect
 		exit
 		;;
-    wapoc)	wapo_comments
+    wapoc)	wapo_comments $1
 	  	exit
 		;;
 esac
