@@ -99,8 +99,6 @@ function make_links {
     typeset f='misc_commands.ksh'
     typeset l
 
-    rm_links
-
     if [ ! -f ${SCRIPT_DIR}/$f ]
     then
 	echo "File $f not in dir.  Copying file from repo."
@@ -165,7 +163,7 @@ function set_perms {
 	exit
     fi
 
-    chmod 700 $@
+    chmod -h 700 $@ # -h for symlinks
     if [ $? -ne 0 ]
     then
 	echo "failure setting perms for links in script dir"
