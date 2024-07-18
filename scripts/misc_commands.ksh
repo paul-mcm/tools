@@ -2,6 +2,7 @@
 
 MPLY='/usr/local/bin/mplayer'
 Prog=${0##*/}
+Trace=false
 
 function pkg_search {
     typeset p=$1
@@ -69,6 +70,25 @@ function mplay_radiouno {
     exit
 }
 
+function mplay_tg7 {
+    $Trace && set -x
+    URL='https://www.la7.it/tgla7/podcast'
+    OIFS=$IFS
+IFS='
+'
+    for line in $(curl -s $URL | grep limone.iltrovatore.it)  
+    do
+	url=$(echo $line | \
+	sed -E 's/.*(https:\/\/limone.iltrovatore.it\/audio.mp3\?.+mp3l=[0-9]{1,})".*/\1/' | \
+	grep '^https')
+	[ $? -eq 0 ] && break
+    done
+
+    IFS=$OIFS
+    $MPLY $url
+}
+
+
 function lib_lookup {
     typeset q=$1
     RunDir="${HOME}/unix_admin" 
@@ -113,6 +133,23 @@ function serial_connect {
     exit
 }
 
+function wapo_comments {
+    typeset url=$1
+    HEAD='https://washingtonpost.com/comments?storyUrl='
+
+    /usr/local/bin/firefox "${HEAD}$url"
+    exit
+}
+
+# Check for trace flag ('-t')
+if [[ $# -eq 1 && $1 == '-t' ]]
+then
+    Trace=true
+    echo "Tracing $Prog"
+    PS4='$LINENO:       '
+    set -x
+fi
+
 case $Prog in
     pkgs)	pkg_search $1
 		exit
@@ -135,11 +172,17 @@ case $Prog in
     dfunk)	mplay_deutschlandfunk
 		exit
 		;;
-    libl)	lib_lookup $1
+    tg7)	mplay_tg7
+		exit
+		;;
+    ll)		lib_lookup $1
 		exit
 		;;
     scon)	serial_connect
 		exit
+		;;
+    wapoc)	wapo_comments
+	  	exit
 		;;
 esac
 
