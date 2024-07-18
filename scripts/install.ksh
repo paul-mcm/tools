@@ -150,6 +150,7 @@ function compare {
 
 function set_perms {
     $Trace && set -x
+    typeset files="$@"
 
     cd $SCRIPT_DIR 
     if [[ "$PWD" != $SCRIPT_DIR ]]
@@ -158,7 +159,7 @@ function set_perms {
 	exit
     fi
 
-    chmod -h 700 $@ # -h for symlinks
+    chmod -h 700 $files	 # -h flag for symlinks
     if [ $? -ne 0 ]
     then
 	echo "failure setting perms for links in script dir"
@@ -196,7 +197,7 @@ then
     exit
 fi
 
-while getopts :achi:lpr:t VAR 2> /dev/null
+while getopts :achi:lprt VAR 2> /dev/null
 do
     case $VAR in
 	a) install_all
