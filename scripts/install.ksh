@@ -227,6 +227,7 @@ do
 	   exit
 	   ;;
 	s) install $OPTARG
+	   set_perms $OPTARG
 	   exit
 	   ;;
 	t) continue #checked for -t above
