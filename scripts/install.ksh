@@ -15,8 +15,10 @@ set -A scripts		\
     cscope_init.ksh	\
     drop_tcp.ksh	\
     grab_openbsd.ksh	\
+    ipfind.ksh		\
     iprange.pl		\
     misc_commands.ksh	\
+    paddrs.ksh		\
     tips.pl
 
 set -A links	\
