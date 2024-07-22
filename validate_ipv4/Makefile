@@ -15,6 +15,7 @@ all: $(objects)
 
 clean:
 	@rm -f $(objects)
+	@rm validate_ipv4
 
 install:
 	@mkdir -p ${INSTALL_DIR}

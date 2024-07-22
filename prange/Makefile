@@ -8,3 +8,6 @@ all:
 install:
 	@mkdir -p ${INSTALL_DIR}
 	@mv prange ${INSTALL_DIR}
+
+clean:
+	@rm prange
