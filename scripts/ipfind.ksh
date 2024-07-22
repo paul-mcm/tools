@@ -39,9 +39,5 @@ else
     exp="\$${h_oct} >= $lo && \$${h_oct} <= $hi"
 fi
 
-set -A ips $( $SRC | awk -F. "${exp} {print}")
-
-for ip in ${ips[@]}
-do
-    echo $ip
-done
+# Run Command, filter w/ awk, send to STDOUT
+$SRC | awk -F. "${exp} {print}"
