@@ -15,7 +15,8 @@ all: $(objects)
 
 install:
 	@mkdir -p ${INSTALL_DIR}
-	@cp iprange ${INSTALL_DIR}
+	@mv iprange ${INSTALL_DIR}
+	@rm -f $(objects)
 
 clean:
 	@rm -f $(objects)

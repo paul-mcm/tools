@@ -6,7 +6,7 @@ all:
 
 install:
 	@mkdir -p ${INSTALL_DIR}
-	@cp rename ${INSTALL_DIR}
+	@mv rename ${INSTALL_DIR}
 
 clean:
 	@rm -f rename

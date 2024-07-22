@@ -7,4 +7,4 @@ all:
 
 install:
 	@mkdir -p ${INSTALL_DIR}
-	@cp prange ${INSTALL_DIR}
+	@mv prange ${INSTALL_DIR}
