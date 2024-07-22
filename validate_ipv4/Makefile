@@ -18,4 +18,5 @@ clean:
 
 install:
 	@mkdir -p ${INSTALL_DIR}
-	@cp validate_ipv4 ${INSTALL_DIR}
+	@mv validate_ipv4 ${INSTALL_DIR}
+	@rm -f $(objects)
