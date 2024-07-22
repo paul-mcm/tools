@@ -1,43 +1,51 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 
 /*
-* Input is two numbers (low, high),
-* between 0 and 1000.
-* Output: a space or newline delimited
-* string (-n) of all numbers between 
-* low and high.
+* Input is two integers (low, high).
+* Output: integers between low and high
+* incremented by 1 or -i <increment> arg.
+* -r reverses output
+* -s <delim> sets a delimiter ('\n' is default)
 */
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#define MAX 1000
 
 int main(int argc, char *argv[])
 {
     long long v1, v2, *low, *high;
     const char *errstr;
     int ch;
-    char sep = ' '; /* may be set to '\n' */
+    char *sep = "\n";
+    int incr = 1;
+    bool reverse = false;
 
-    if (argc == 3) {
-	v1 = strtonum(argv[1], 1, 1000, &errstr); 
-	v2 = strtonum(argv[2], 1, 1000, &errstr);
-    } else if (argc == 4) {
-	while ((ch = getopt(argc, argv, ":s")) != -1) {
-            switch (ch) {
-                case 's': sep = '\n';
-                          break;
-                case '?': printf("ignoring bad arg\n");
-                          break;
-            }
-	}
-	v1 = strtonum(argv[2], 1, 1000, &errstr);
-	v2 = strtonum(argv[3], 1, 1000, &errstr);
-    } else {
-	printf("Invalid args\n");
-	exit(-1);
+    if (argc < 1) {
+	printf("Not enough args\n");
+	exit (-1);
     }
+    while ((ch = getopt(argc, argv, ":hi:rs:")) != -1) {
+	switch (ch) {
+	    case 'h': printf("usae prange [-hnr] [-i increment ] low high\n");
+		exit(0);
+	    case 'i': incr = strtonum(optarg, 1, MAX, &errstr);
+		break;
+	    case 'r': reverse = true;
+		break;
+	    case 's': sep = optarg;
+		break;
+	    case '?': printf("ignoring bad arg\n");
+		exit(0);
+            }
+ 	}
+
+    v1 = strtonum(argv[ ((optind++)) ], 1, MAX, &errstr);
+    v2 = strtonum(argv[optind], 1, MAX, &errstr);
 
     if (v1 == v2) {
 	exit(0);
@@ -49,8 +57,17 @@ int main(int argc, char *argv[])
 	low  = &v1;
     }
 
-    while (*low <= *high) {
-	printf("%lld%c", *low, sep);
-	(*low)++;
+    if (! reverse ) {
+	while (*low < *high) {
+	    printf("%lld%s", *low, sep);
+	    (*low) += incr;
+	}
+	printf("%lld\n", *low);
+    } else {
+	while (*high > *low) {
+	    printf("%lld%s", *high, sep);
+	    *high -= incr;
+	}
+	printf("%lld\n", *high);
     }
 }
