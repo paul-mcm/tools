@@ -11,6 +11,7 @@ Trace=false
 autoload
 
 set -A scripts		\
+    addrinfo.ksh	\
     agent_setup.ksh	\
     cscope_init.ksh	\
     drop_tcp.ksh	\
@@ -23,14 +24,15 @@ set -A scripts		\
 
 set -A links	\
     addnum	\
+    addr2bits	\
     bat		\
     clean	\
-    scon	\
     dfunk	\
     ll		\
     pkgs	\
     radiotre	\
     radiouno	\
+    scon	\
     tg7		\
     wapoc	
 

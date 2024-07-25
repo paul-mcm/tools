@@ -1,5 +1,6 @@
 #!/bin/ksh 
 
+FPATH=${HOME}/scripts/lib
 MPLY='/usr/local/bin/mplayer'
 Prog=${0##*/}
 Trace=false
@@ -160,6 +161,9 @@ case $Prog in
 		exit
 		;;
     addnum)	addup
+		exit
+		;;
+    addr2bits)  show_ipv4_bits $1
 		exit
 		;;
     bat)	battery_chk
