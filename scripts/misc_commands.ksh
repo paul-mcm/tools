@@ -1,6 +1,6 @@
 #!/bin/ksh 
 
-FPATH=${HOME}/scripts/lib
+FPATH="${HOME}/scripts/lib"
 MPLY='/usr/local/bin/mplayer'
 Prog=${0##*/}
 Trace=false
@@ -8,6 +8,12 @@ Trace=false
 function pkg_search {
     typeset p=$1
     typeset RunDir='/usr/ports'
+
+    if [ -z $p ]
+    then
+	echo "Usage: $Prog <pkg name>"
+	exit
+    fi
 
     cd $RunDir
     if [[ "$PWD" != $RunDir ]]
@@ -92,7 +98,13 @@ IFS='
 
 function lib_lookup {
     typeset q=$1
-    RunDir="${HOME}/unix_admin" 
+    typeset RunDir="${HOME}/unix_admin"
+
+    if [ -z $q ]
+    then
+	echo "Usage: $Prog <subject>"
+	exit
+    fi
 
     cd $RunDir
     if [[ "$PWD" != $RunDir ]]
@@ -138,7 +150,7 @@ function wapo_comments {
     typeset url=$1
     if [ -z $url ]
     then
-	echo "Need an arg"
+	echo "$Prog <url>"
 	exit
     fi
     HEAD='https://washingtonpost.com/comments?storyUrl='
@@ -148,18 +160,21 @@ function wapo_comments {
 }
 
 # Check for trace flag ('-t')
-if [[ $# -eq 1 && $1 == '-t' ]]
-then
-    Trace=true
-    echo "Tracing $Prog"
-    PS4='$LINENO:       '
-    set -x
-fi
+while getopts :t VAR 2> /dev/null
+do
+    case $VAR in
+	t) PS4='$LINENO        '
+	   Trace=true
+	   set -x
+	   ;;
+	?) echo "bad option"
+	   exit
+	   ;;
+    esac
+done
+shift $(($OPTIND - 1))
 
 case $Prog in
-    pkgs)	pkg_search $1
-		exit
-		;;
     addnum)	addup
 		exit
 		;;
@@ -172,22 +187,31 @@ case $Prog in
     clean)	remove_backup_files
 		exit
 		;;
+    dfunk)	mplay_deutschlandfunk
+		exit
+		;;
+    ll)		lib_lookup $1
+		exit
+		;;
+    netfind)	network_lookup $1
+		exit
+		;;
+    nprfx)	network_prefix $1 $2
+		exit
+		;;
+    pkgs)	pkg_search $1
+		exit
+		;;
     radiouno)	mplay_radiouno
 		exit
 		;;
     radiotre)	mplay_radiotre
 		exit
 		;;
-    dfunk)	mplay_deutschlandfunk
+    scon)	serial_connect
 		exit
 		;;
     tg7)	mplay_tg7
-		exit
-		;;
-    ll)		lib_lookup $1
-		exit
-		;;
-    scon)	serial_connect
 		exit
 		;;
     wapoc)	wapo_comments $1
