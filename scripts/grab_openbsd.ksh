@@ -1,8 +1,7 @@
 #!/bin/ksh 
 
 V='7.5'
-#BASE_DIR="/mnt/OpenBSD${V}"
-BASE_DIR="${HOME}/tmp/OpenBSD${V}"
+BASE_DIR="/mnt/OpenBSD${V}"
 URL=$(cat /etc/installurl)
 CHKSUM=SHA256
 SHA_SIG=SHA256.sig
@@ -107,14 +106,14 @@ do
     case $VAR in
 	a) arch=$OPTARG
 	   ;;
-	h) continue
+	h) exit
 	   ;;
 	n) Test=true
 	   ;;
 	t) Trace=true
 	   Test=true
 	   echo "Tracing $prog"
-	   PS4='[$LINENO]: '
+	   PS4='$LINENO:	'
 	   set -x
 	   ;;
 	?) echo "error"
