@@ -29,6 +29,8 @@ set -A links	\
     clean	\
     dfunk	\
     ll		\
+    netfind	\
+    nprfx	\
     pkgs	\
     radiotre	\
     radiouno	\
