@@ -1,9 +1,29 @@
 #!/bin/ksh
 
 FPATH="${HOME}/scripts/lib"
+Prog=${0##*/}
 Trace=false
 Max=1024
 Cnt=0
+
+function help {
+    echo
+    cat >&2 <<END_USAGE
+    $Prog	- 	print $Max ipv4 addrs in network range
+			for given CIDR address.
+
+    $Prog [-mth] CIDR_address
+
+        -h      -       this 'help' section
+	-m	-	set max number of addrs to print
+			Defaults to 1024
+        -t      -       Debug
+
+END_USAGE
+    exit
+}
+
+
 
 function poct {
     $Trace && set -x
@@ -33,10 +53,11 @@ function poct {
     return
 }
 
-while getopts :c:m:t VAR 2> /dev/null
+while getopts :hm:t VAR 2> /dev/null
 do
     case $VAR in
-	c) cidr=$OPTARG
+	h) help
+	   exit
 	   ;;
 	m) Max=$OPTARG
 	   ;;
@@ -44,15 +65,17 @@ do
 	   PS4='$LINENO	'
 	   set -x
 	   ;;
-	?) echo "something is missing"
+	?) echo "Usage: [-t] [-m max] CIDR_addr"
 	   exit
 	   ;;
     esac
 done
+shift $(($OPTIND - 1))
+cidr=$@
 
 set -A hi_lo_ips $(${HOME}/bin/iprange $cidr)
 set -A octs $(parse_octets $cidr)
-h_oct=$(( ${cidr##*/} / 8))
+h_oct=$(( ${cidr##*/} / 8 ))
 
 # host octets - high, low
 lo=$(echo ${hi_lo_ips[0]} | cut -d. -f $(( h_oct + 1 )) )
