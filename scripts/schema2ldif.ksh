@@ -3,10 +3,8 @@
 SCHEMA_DIR=/etc/openldap/schema
 DIR=/tmp/ldap
 Trace=false
-Write=false
-Out=/dev/stdout # -w flag will ouput to ldif file
 
-while getopts :htw VAR 2> /dev/null
+while getopts :hnt VAR 2> /dev/null
 do
     case $VAR in
 	h) continue
@@ -15,7 +13,7 @@ do
 	   PS4='$LINENO		'
 	   set -x
 	   ;;
-	w) Write=true
+	n) ldif_out=/dev/stdout
 	   ;;
 	?) echo "Bad arg"
 	   exit
@@ -38,7 +36,9 @@ schemafile=$1		# Full path
 obj=${schemafile##*/}	# name of object, stp 1
 obj=${obj%.schema}	# stp 2
 typeset -l schema=$obj	# schema/lc
-$Write && Out="${SCHEMA_DIR}/${schema}.ldif"
+
+# w/o -n flag, output do ldif file in schema dir
+ldif_out=${ldif_out:="${SCHEMA_DIR}/${schema}.ldif"}
 
 cp $schemafile $DIR/${schema}.schema
 
@@ -60,7 +60,7 @@ slapcat -n 0 -F ${DIR}/slapd.d -H "ldap:///???(cn={2}${schema})" | \
     -e ^entryCSN: \
     -e ^modifiersName: \
     -e ^modifyTimestamp: | \
-    sed -e "s/{2}'"$obj"'/'"$obj"'/" > $Out
+    sed -e "s/{2}'"$obj"'/'"$obj"'/" > $ldif_out
 
 exit
 
