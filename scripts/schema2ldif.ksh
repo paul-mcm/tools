@@ -50,9 +50,11 @@ ldif_out=${ldif_out:-"${SCHEMA_DIR}/${schema}.ldif"}
 
 cp $schemafile $DIR/${schema}.schema
 
-echo "include /etc/openldap/schema/core.schema" >> ${DIR}/slapd.conf
-echo "include /etc/openldap/schema/cosine.schema" >> ${DIR}/slapd.conf
-echo "include ${DIR}/${schema}.schema" >> ${DIR}/slapd.conf
+cat >&2 <<END >> ${DIR}/slapd.conf
+include /etc/openldap/schema/core.schema
+include /etc/openldap/schema/cosine.schema
+include ${DIR}/${schema}.schema
+END
 
 slaptest -Qf ${DIR}/slapd.conf -F ${DIR}/slapd.d
 if [[ $? -ne 0 ]]
