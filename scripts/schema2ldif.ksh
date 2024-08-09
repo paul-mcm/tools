@@ -21,6 +21,12 @@ do
     esac
 done
 
+if [ $# -lt 1 ]
+then
+    echo 'Missing schema file'
+    exit
+fi
+
 shift $(($OPTIND - 1))
 
 [[ -d $DIR ]] && rm -Rf $DIR
@@ -32,17 +38,19 @@ then
     exit
 fi
 
+# Set vars related to schema naming conventions
 schemafile=$1		# Full path
 obj=${schemafile##*/}	# name of object, stp 1
 obj=${obj%.schema}	# stp 2
 typeset -l schema=$obj	# schema/lc
 
-# w/o -n flag, output do ldif file in schema dir
-ldif_out=${ldif_out:="${SCHEMA_DIR}/${schema}.ldif"}
+# unless we're running w/ the -n flag,
+# set output to file in schema dir
+ldif_out=${ldif_out:-"${SCHEMA_DIR}/${schema}.ldif"}
 
 cp $schemafile $DIR/${schema}.schema
 
-echo "include /etc/openldap/schema/core.schema" > ${DIR}/slapd.conf
+echo "include /etc/openldap/schema/core.schema" >> ${DIR}/slapd.conf
 echo "include /etc/openldap/schema/cosine.schema" >> ${DIR}/slapd.conf
 echo "include ${DIR}/${schema}.schema" >> ${DIR}/slapd.conf
 
