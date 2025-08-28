@@ -1,60 +1,93 @@
 #!/bin/ksh
 
-FPATH="${HOME}/scripts/lib"
-Prog=${0##*/}
+PROG='addrinfo.ksh'
+FPATH='/usr/local/lib/ksh'
+PATH='/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:'
+
 Trace=false
+TestFlg=false
+
+export PATH=$PATH
+autoload
 
 function help {
     echo
     cat >&2 <<ENDUSAGE
-    $Prog - For given CIDR address, print addresses,
+
+$PROG - For given CIDR address, print addresses,
 	    and network range of address in binary and
 	    and human readable form.
 
-    $Prog [-th] CIDR_address
+Usage: $Prog [-hx] CIDR_address
 
+Options:
 	-h	-	this 'help' section
-	-t	-	Debug
+	-x	-	set xtrace
 
 ENDUSAGE
 
     exit
 }
 
-while getopts :ht VAR 2> /dev/null
+function oct2bits {
+    $Trace && set -x
+    typeset o="$1"
+    typeset f="${2:-128}"
+
+    if [[ $o -ge $f ]]
+    then
+        bits="${bits}1"
+        (( o = o - f ))
+    else
+        bits="${bits}0"
+    fi
+
+    [[ $f -ne 1 ]] && oct2bits $o $(( $f / 2 )) || echo "$bits"
+}
+
+function ip2bits {
+    $Trace && set -x
+    typeset ip="$1"
+    typeset octs
+    typeset b_str=  
+
+    set -A octs $(echo $ip | awk -F. '{print $1, $2, $3, $4}')
+ 
+    for o in ${octs[@]}
+    do  
+        bits=$(oct2bits "$o")
+        b_str="${b_str:+${b_str} ${bits}}"
+        b_str="${b_str:-$bits}"
+        bits=
+    done
+    echo $b_str
+}
+
+while getopts :hx VAR 2> /dev/null
 do
     case $VAR in
 	h) help
 	   ;;
-	t) Trace=true
+	x) Trace=true
 	   PS4='$LINENO	'
 	   set -x
 	   ;;
-	?) echo "Usage: $Prog [-t] <ipv4addr/netprfx>"
+	?) echo "bad option"
 	   exit
 	   ;;
     esac
 done
 shift $(($OPTIND - 1))
-cidr=$@
+cidr="$@"
 
-validate_ipv4_cidr $cidr || exit
+validate_ipv4_cidr "$cidr" || die "invalid ipv4/CIDR"
 
-set -A range $(iprange $(padaddr $cidr))
-lo=$(addr2bits ${range[0]})
-hi=$(addr2bits ${range[1]})
+set -A range $(/usr/local/bin/iprange $cidr)
 
-if [[ $cidr = *.0/* ]] # if network addr
-then
+lo=$( ip2bits ${range[0]} )
+hi=$( ip2bits ${range[1]} )
 
-    echo "Low:\t${range[0]}\t$(addr2bits ${range[0]})"
-    echo "High:\t${range[1]}\t$(addr2bits ${range[1]})"
-else
-    set -A range $(iprange $cidr)
-    ip=${cidr%/*}
-    echo "Low:\t${range[0]}\t$(addr2bits ${range[0]})"
-    echo "Host\t$ip\t$(addr2bits $ip)"
-    echo "High:\t${range[1]}\t$(addr2bits ${range[1]})"
-fi
+echo "${range[0]}				${range[1]}"
+echo "$( ip2bits ${range[0]} )	$( ip2bits ${range[1]} )"
 
 
