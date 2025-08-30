@@ -84,9 +84,6 @@ validate_ipv4_cidr "$cidr" || die "invalid ipv4/CIDR"
 
 set -A range $(/usr/local/bin/iprange $cidr)
 
-lo=$( ip2bits ${range[0]} )
-hi=$( ip2bits ${range[1]} )
-
 echo "${range[0]}				${range[1]}"
 echo "$( ip2bits ${range[0]} )	$( ip2bits ${range[1]} )"
 
