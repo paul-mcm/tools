@@ -1,38 +1,69 @@
 #!/bin/ksh
 
+PROG='agent_setup.ksh'
+FPATH='/usr/local/lib/ksh'
+PATH='/sbin:/bin:/usr/sbin:/usr/bin'
 RUNDIR=${HOME}
-ENV_FILE="${RUNDIR}/.ssa_env"
-UMASK=077
+CFG="${HOME}/.tcshrc"
 
-umask $UMASK
+Trace=false
+TestFlg=false
+
+export PATH=$PATH
+autoload
+
+function help {
+    cat >&2 <<ENDUSAGE
+
+Prog: $PROG - set shell environment vars for 
+                  ssh-agent in X 
+                  windows environment
+
+Usage: $PROG [-htx]
+
+Options:
+    -h	    -       display this 'help' section
+    -t      -       debug; show but don't exec commands that
+                    make system modifications/changes
+    -x      -       turn on xtrace
+
+ENDUSAGE
+     exit
+}
+
+##################
+### START MAIN
+##################
+while getopts :htx OPT 2> /dev/null
+do
+    case $OPT in
+        h) help
+           exit
+           ;;
+        t) TestFlg=true 
+           ;;
+        x) Trace=true
+           echo "Tracing $prog"
+           PS4='$LINENO:        '
+           set -x
+           ;;
+        ?) echo "error"
+           exit
+           ;;
+    esac
+done
 
 cd $RUNDIR
-if [[ "$PWD" != $RUNDIR ]]
-then
-    echo "Unable to CD to $RUNDIR"
-    exit
-fi
+[[ "$PWD" != $RUNDIR ]] && die "Unable to CD to $RUNDIR"
+[[ ! -f $CFG ]] && die "config file $CFG not found"
 
-[[ -f $ENV_FILE ]] && rm $ENV_FILE 
+runcmd 'pkill ssh-agent'
 
-cat /dev/null > $ENV_FILE
-if [ $? -ne 0 ]
-then
-    echo "Failed to create $ENV_FILE; aborting"
-fi
+sed -i -e '/SSH_AUTH_SOCK/d' -e '/SSH_AGENT_PID/d' $CFG
 
-file=$(ls -l $ENV_FILE | awk '{print $1, $3, $5}') #Get perms, user, size.
-perm="${file%% *}"	# perms
-o="${file#* }"		# owner stp 1
-o="${o% *}"		# owner stp 2
-sz="${file##* }"	# file size
+runcmd '/usr/bin/ssh-agent' | grep -v 'echo' >> $CFG || \
+  die "ssh-agent failed"
 
-if [[ ("$perm" != '-rw-------') || ("$o" != "$USER") || ($sz -ne 0) ]]
-then
-    echo "Unexpected permissions ($perm), owner ($o), or" \
-    "size ($sz) for $ENV_FILE -- aborting"
-    exit
-fi
 
-/usr/bin/ssh-agent | grep -v 'echo' > $ENV_FILE
+
 
