@@ -1,117 +1,84 @@
 #!/bin/ksh 
 
-V='7.5'
-BASE_DIR="/mnt/OpenBSD${V}"
-URL=$(cat /etc/installurl)
-CHKSUM=SHA256
-SHA_SIG=SHA256.sig
+PROG='grabopenbsd.ksh'
+FPATH='/usr/local/lib/ksh'
+PATH='/sbin:/bin:/usr/sbin:/usr/bin'
+BASEURL='https://mirrors.ocf.berkeley.edu/pub/OpenBSD'
+ARCH='amd64' # or i386
+RV='7.7' # Release version
+DIR="/space/OpenBSD${RV}"
+WGET="/usr/local/bin/wget'
+SIGNFY='signify -Cp /etc/signify/openbsd-77-base.pub -x SHA256.sig'
+
 Trace=false
-Test=false
-prog=${0##*/}
+TestFlg=false
 
-set -A amd64_set \
-    INSTALL.amd64 \
-    SHA256	\
-    SHA256.sig  \
-    base75.tgz	\
-    bsd.mp	\
-    bsd.rd	\
-    comp75.tgz	\
-    game75.tgz	\
-    index.txt	\
-    man75.tgz	\
-    xbase75.tgz	\
-    xfont75.tgz	\
-    xserv75.tgz	\
-    xshare75.tgz \
+export PATH=$PATH
+autoload # search FPATH
+umask 227 # octal 440 or 'r--r-----'
 
-set -A i386_set \
-    INSTALL.i386 \
-    SHA256	\
-    SHA256.sig	\
-    base75.tgz	\
-    bsd		\
-    bsd.rd	\
-    comp75.tgz	\
-    index.txt	\
-    man75.tgz	\
-    xbase75.tgz	
+pv=$(echo $RV | sed 's/\.//') # no decimal for version in pkg names
 
-function fetch_index {
-    $Trace && set -x
-    typeset a=$1
-    wget ${URL}/${V}/${a}/index.txt
+amd64_set="base${pv}.tgz 
+    bsd.mp		
+    bsd.rd		
+    comp${pv}.tgz	
+    game${pv}.tgz	
+    man${pv}.tgz	
+    xbase${pv}.tgz	
+    xfont${pv}.tgz	
+    xserv${pv}.tgz	
+    xshare${pv}.tgz"
+
+i386_set="base${pv}.tgz	
+    bsd			
+    bsd.rd		
+    comp${pv}.tgz	
+    man${pv}.tgz	
+    xbase${pv}.tgz"
+
+function help {
+    cat >&2 <<ENDUSAGE
+
+$PROG - Download OpenBSD install packages/sets
+
+Options:
+    -h            -       display this 'help' section     
+    -t            -       debug; no exec of commands that
+			  cause modifications/changes
+    -x 	          -       turn on xtrace
+
+ENDUSAGE
+
+     exit
 }
 
-function fetch {
+function fetch_file {
     $Trace && set -x
-    typeset a=$1
-    typeset p=$2
-
-    if [[ ! -f $p ]]
-    then 
-	echo "wget ${URL}/${V}/${a}/$p"
-    else 
-	fsize=$(ls -l $p | awk '{print $5}' )
-	index_s=$(cat index.txt | awk -v PKG=$p '$10 == PKG {print $5}')
-	if [[ $fsize != $index_s ]]
-	then
-	    echo "wget ${URL}/${V}/${a}/$pkg"
-	else
-	    echo "File sizes match for $p"
-	fi
-    fi
+    typeset f=$1 
+    runcmd ${WGET}/${BASEURL}/${RV}/${ARCH}/$f || return 1
 }
 
-function getset {
+function fetch_pkg {
     $Trace && set -x
-    typeset a=$1
-
-    [ -d ${BASE_DIR}/$a ] || mkdir -p ${BASE_DIR}/$a
-    if [ $? -ne 0 ]
-    then
-	echo "Failed to create dir ${BASE_DIR}/$a"
- 	exit 1
-    fi
-
-    cd ${BASE_DIR}/$a
-    if [[ $PWD != "${BASE_DIR}/$a" ]]
-    then
-	echo "failed to cd to ${BASE_DIR}/$a"
-	exit
-    fi
-
-    if [[ ! -f index.txt ]]
-    then
-	echo "Fetching index.txt"
-	fetch_index $a
-    fi
-
-    if [ $Test ]
-    then
-	eval "echo \${${a}_set[@]}" | tr ' ' '\n'
-    else
-	for pkg in $(eval "echo \${${a}_set[@]}")
-	do
-	    fetch $pkg
-	done
-    fi
+    typeset p=$1
+    fetch_file $p || return 1
+    $SIGNFY $p || \
+      echo "signify(1) failed for $p" && return 1
 }
 
 ##################
 ### START MAIN
 ##################
-while getopts :a:hnt VAR 2> /dev/null
+while getopts :htx OPT 2> /dev/null
 do
-    case $VAR in
-	a) arch=$OPTARG
+    case $OPT in
+	h) help
+	   exit
 	   ;;
-	h) exit
+	t) TestFlg=true
 	   ;;
-	n) Test=true
-	   ;;
-	t) Trace=true
-	   Test=true
+	x) Trace=true
 	   echo "Tracing $prog"
 	   PS4='$LINENO:	'
 	   set -x
@@ -122,15 +89,36 @@ do
     esac
 done
 
-if [ $arch == amd64 -o $arch == i386 ]
+[[ ! -d ${DIR}/$ARCH ]] && (runcmd mkdir -p ${DIR}/$ARCH || \
+	die "Failed to create ${DIR}/$ARCH")
+
+cd ${DIR}/$ARCH
+[[ $PWD != ${DIR}/$ARCH ]] && die "failed cd to ${DIR}/$ARCH"
+
+[ ! -f ./SHA256 ]     && fetch_file SHA256
+[ ! -f ./SHA256.sig ] && fetch_file SHA256.sig
+[ ! -f ./index.txt ]  && fetch_file index.txt
+
+# Set pkgs var to pkg set for correct architecture
+[ $ARCH == 'amd64' ] && pkgs=$amd64_set || pkgs=$i386_set
+
+for pkg in $pkgs
+do
+    if [ ! -f $pkg ]
+    then 
+        fetch_pkg $pkg || die "Failed to fetch $pkg"
+    else
+	$SIGNFY $pkg && continue    # continue if pkg exists/verified
+	# remove if unverified pkg and fetch again
+	runcmd rm $pkg || die "Couldn't rm unverified pkg $pkg"
+	fetch_pkg $pkg || die "Failed to fetch $pkg"
+    fi
+done
+
+# Fetch source files if amd64
+if [ $ARCH == amd64 ] 
 then
-    getset $arch
-else
-    echo "missing or bad input"
-    exit
+    [ ! -f ./src.tar.gz ]    && fetch_file src.tar.gz
+    [ ! -f ./sys.tar.gz ]    && fetch_file sys.tar.gz
+    [ ! -f ./ports.tar.gz ]  && fetch_file ports.tar.gz
 fi
-
-
-exit
-
-
