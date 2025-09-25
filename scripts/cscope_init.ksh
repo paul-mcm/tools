@@ -1,42 +1,21 @@
 #!/bin/ksh
-
-# BUILD CSCOPE CROSS REFERENCE
-# AND CTAGS FILE IN $PWD
-
+# BUILD CSCOPE CROSS REFERENCE AND CTAGS FILE IN $PWD
+FPATH='/usr/local/lib/ksh'
 FILES='cscope.files'
 TAGS_FILE='ctags'
-dir=$PWD
+Trace=false
+autoload
 
-cd $dir
-if [ $? -ne 0 ]
-then
-    echo "failed to cd to $dir"
-    exit -1;
-fi
+[[ ! -w $PWD ]] && die "Can't write to $dir"
 
-if [[ ! -w $dir ]]
-then
-    echo "Can't write to $dir"
-    exit 1
-fi
-
-find ./ -name "*.c" -o -name "*.h" > $FILES
-if [ $? -ne 0 ]
-then
-    echo "find error"
-    exit -1;
-fi
+find ./ -name "*.c" -o -name "*.h" > $FILES || die echo "find error"
 
 # Call cscope
-/usr/local/bin/cscope -qRb -i ./${FILES}
+/usr/local/bin/cscope -b -i ./${FILES}
 
 # Call ctags
 cat $FILES | while read line
 do
     /usr/bin/ctags -af $TAGS_FILE $line
-    if [ $? -ne 0 ]
-    then
-	echo "ctags error: $?"
-	exit -1
-    fi
+    [[ $? -ne 0 ]] && die "ctags error: $?"
 done
