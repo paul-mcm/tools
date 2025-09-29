@@ -1,239 +1,101 @@
 #!/bin/ksh 
 
-FPATH="${HOME}/scripts/lib"
-REPO_DIR="${HOME}/dev/tools/scripts"
-RUN_DIR=${REPO_DIR}
-SCRIPT_DIR="${HOME}/scripts"
-#SCRIPT_DIR="${HOME}/tmp" # for testing
+#FPATH='/home/paul/local/lib/ksh'
+FPATH='/home/paul/dev/lib/shell' #use if nothing in $HOME/local/
+SCRIPTDIR='/home/paul/local/scripts'
+LIBDIR='/home/paul/local/lib/ksh'
+SCRIPT_REPO='/home/paul/dev/tools/scripts'
+LIB_REPO='/home/paul/dev/lib/shell'
 
-Prog=${0##*/}
+Prog='install.ksh'
 Trace=false
+TestFlg=false
 autoload
 
-set -A scripts		\
-    addrinfo.ksh	\
-    agent_setup.ksh	\
-    cscope_init.ksh	\
-    drop_tcp.ksh	\
-    grab_openbsd.ksh	\
-    ipfind.ksh		\
-    iprange.pl		\
-    misc_commands.ksh	\
-    paddrs.ksh		\
+scripts='addrinfo.ksh
+    agent_setup.ksh	    
+    cscope_init.ksh
+    drop_tcp.ksh
+    grab_openbsd.ksh
+    ipfind.ksh
+    iprange.pl
+    paddrs.ksh
     tips.pl
+    vm_manage.ksh'
 
-set -A links	\
-    addnum	\
-    addr2bits	\
-    bat		\
-    clean	\
-    dfunk	\
-    ll		\
-    netfind	\
-    nprfx	\
-    pkgs	\
-    radiotre	\
-    radiouno	\
-    scon	\
-    tg7		\
-    wapoc	
+libs=$(ls ./lib/ | grep -v test.ksh)
 
 function help {
     echo
     cat >&2 <<ENDUSAGE
-    $Prog - install scripts from repo to local dirs
+$Prog - install scripts from repo to local dirs
 
-    -a			-	install all scripts and make links
-    -c			-	compare mod times in repo w/ script dir
-    -h                  -       display this 'help' section
-    -i script	 	-       install script from repo
-    -l 		        -       make file system links
-    -n                  -       
-    -p			-	set perms on install files
-    -r			-	remove hard links to misc_commands.ksh
-    -t			-       turns on tracing to debug
+Usage: $Prog [-achlnprstx] [-i script]
+
+    -c		-	compare mod times in repo w/ script dir
+    -h		-       display this 'help' section
+    -i		-	install all scripts and make links
+    -t		-       debug; show but don't exec commands that
+			make system modifications/changes
+    -x		-       turns on xtrace
 
 ENDUSAGE
-
      exit
 }
 
-function install {
-    $Trace && set -x
-    typeset f=$1
-
-    if [ ! -f $f ]
-    then
-	echo "$f not in repo dir"
-	return 1
-    fi
-
-    cp $f $SCRIPT_DIR
-    if [ $? -ne 0 ]
-    then
-	echo "failed to cpy $f"
-	exit
-    fi
-}
-
-function install_all {
-    $Trace && set -x
-    typeset i;
-
-    for i in ${scripts[@]}
-    do
-	install $i
-    done
-
-    if [ ! -h ${SCRIPT_DIR}/lib ]
-    then
-	echo "Creating link libs"
-	ln -s ${HOME}/dev/lib/shell ${SCRIPT_DIR}/lib || \
-	    echo "Error making link for $l"
-    fi
-}
-
-function rm_links {
-    $Trace && set -x
-    typeset l
-    for l in ${links[@]}
-    do
-	if [ -f ${SCRIPT_DIR}/$l ]
-	then   
-	    rm -r ${SCRIPT_DIR}/$l || \
-		echo "Error removing old link: $l"
-	fi
-    done
-}
-
-function make_links {
-    $Trace && set -x
-    typeset f='misc_commands.ksh'
-    typeset l
-
-    if [ ! -f ${SCRIPT_DIR}/$f ]
-    then
-	echo "File $f not in dir.  Copying file from repo."
-	cp ${REPO_DIR}/$f ${SCRIPT_DIR}/
-	if [ $? -ne 0 ]
-	then
-	    echo "failed to copy $f to $SCRIPT_DIR"
-	    return 1
-	fi
-    fi
-
-    for l in ${links[@]}
-    do
-	if [ ! -h ${SCRIPT_DIR}/$l ] 
-	then 
-	    ln -s ${SCRIPT_DIR}/$f ${SCRIPT_DIR}/$l || \
-		echo "Error making link for $l"
-	fi
-    done
-}
-
 function compare {
-    $Trace && set -x
+    ${Trace:-false} && set -x
+    typeset repo="$1"
+    typeset  installed="$2"
 
-    for s in ${scripts[@]}
-    do
-	if [[ ! -f ${REPO_DIR}/$s || ! -f ${SCRIPT_DIR}/$s ]]
-	then	
-	    echo "$s missing from repo or script dir"
-	    continue
-	fi
-
-	f1="${REPO_DIR}/$s"
-	f2="${SCRIPT_DIR}/$s"
-
-	diff -q $f1 $f2 > /dev/null
-	[ $? -eq 0 ] && continue
-	
-	t_f1=$(stat -f "%m" $f1)
-	t_f2=$(stat -f "%m" $f2)
-
-	if [[ $t_f1 -gt $t_f2 ]]
-	then
-	    echo "repo ahead of install for $s"
-	else
-	    echo "install modified ahead of repo for $s"
-	fi
-    done    
-}
-
-function set_perms {
-    $Trace && set -x
-    typeset files="$@"
-
-    cd $SCRIPT_DIR 
-    if [[ "$PWD" != $SCRIPT_DIR ]]
+    if [[ ! -f $repo || ! -f $installed ]]
     then
-	echo "Unable to CD to $SCRIPT_DIR"
-	exit
+	echo "${repo##*/}" not found
+        return 1
     fi
-    # -h flag for symlinks
-    chmod -h 700 $files	|| \
-	echo "failure setting perms for links"
+
+    /usr/bin/diff -q $repo $installed > /dev/null 2>&1
+    if [ $? -ne 0 ]
+    then	
+        rstmp=$(stat -f "%m" $repo)
+        istmp=$(stat -f "%m" $installed)
+        if [[ $rstmp -gt $istmp ]]
+        then
+	    echo "repo ahead of install for ${repo##*/}" || \
+	    echo "install ahead of repo for ${repo##*/}"
+	fi
+    fi
+}
+
+function mk_installdir {
+    ${Trace:-false} && set -x
+    typeset d="$1"
+    umask 022
+    runcmd mkdir -p $d || die "Failed to make ${d}: $?"
 }
 
 #################
-## START MAIN CODE
+## Start MAIN CODE
 #################
-if [[ $# -lt 1 ]]
-then
-    echo "needs at leat 1 arg" && exit
-fi
+[[ $# -lt 1 ]] && die "needs at leat 1 arg"
 
-# Find & turn on tracing flag asap
-if $(trace $@)  # call trace() function
-then
-    Trace=true
-    echo "Tracing $Prog"
-    PS4='$LINENO:	'
-    set -x
-fi
-
-if [[ ! -d $REPO_DIR || ! -d $RUN_DIR || ! -d $SCRIPT_DIR ]]
-then
-    echo "Missing directories"
-    exit
-fi	
-
-cd $RUN_DIR
-if [[ "$PWD" != $RUN_DIR ]]
-then
-    echo "Unable to CD to $RUN_DIR"
-    exit
-fi
-
-while getopts :achi:lprt VAR 2> /dev/null
+while getopts :chitx VAR 2> /dev/null
 do
     case $VAR in
-	a) install_all
-	   make_links
-	   set_perms ${links[@]} ${scripts[@]}
-	   exit
-	   ;;
-	c) compare
-	   exit
+	c) Compare=true
 	   ;;
 	h) help
 	   exit
 	   ;;
-	i) install $OPTARG
-	   set_perms $OPTARG
-	   exit
+	i) Install=true
 	   ;;
-	l) make_links
-	   set_perms ${links[@]}
+	t) TestFlg=true
 	   ;;
-	p) set_perms ${links[@]} ${scripts[@]}
-	   exit
-	   ;;
-	r) rm_links
-	   exit
-	   ;;
-	t) continue #checked for -t above
+	x) Trace=true
+	   TestFlg=true
+	   echo "Tracing $Prog"
+	   PS4='$LINENO:'
+	   set -x
 	   ;;
 	?) echo "Bad option"
 	   exit
@@ -241,4 +103,32 @@ do
     esac
 done
 
-exit
+if [ $Install ]
+then 
+    [[ ! -d $SCRIPTDIR ]] && mk_installdir $SCRIPTDIR
+    [[ ! -d $LIBDIR ]] && mk_installdir $LIBDIR
+
+    for f in ${scripts[@]}
+    do
+	runcmd cp ${SCRIPT_REPO}/$f $SCRIPTDIR || die "Failed to cpy $f"
+        runcmd chmod 755 ${SCRIPTDIR}/$f || die "chmod returned $? for ${f}"
+    done
+
+    for f in ${libs[@]}
+    do
+	runcmd cp ${LIB_REPO}/$f $LIBDIR || die "Failed to cpy $f"
+        runcmd chmod 755 ${LIBDIR}/$f || die "chmod returned $? for ${f}"
+    done
+fi
+
+if [ $Compare ]
+then
+   for s in ${scripts[@]}
+   do
+	compare "${SCRIPT_REPO}/$s" "${SCRIPTDIR}/$s"
+   done
+   for l in ${libs[@]}
+   do
+	compare "${LIB_REPO}/$l" "${LIBDIR}/$l"
+   done
+fi
