@@ -54,13 +54,13 @@ ENDUSAGE
 }
 
 function fetch_file {
-    $Trace && set -x
+    ${Trace:-false} && set -x
     typeset f=$1 
     runcmd ${WGET}/${BASEURL}/${RV}/${ARCH}/$f || return 1
 }
 
 function fetch_pkg {
-    $Trace && set -x
+    ${Trace-:false} && set -x
     typeset p=$1
     fetch_file $p || return 1
     $SIGNFY $p || \

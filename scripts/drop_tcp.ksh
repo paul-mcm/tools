@@ -35,7 +35,7 @@ ENDUSAGE
 }
 
 function validate_sock {
-    $Trace && set -x
+    ${Trace-:false} && set -x
     typeset s=$1
     validate_port ${s##*.} || return 1
     ipv4_validate ${s%.*} || return 1
