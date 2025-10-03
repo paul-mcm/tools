@@ -1,14 +1,12 @@
 #!/bin/ksh
 
 PROG='agent_setup.ksh'
-FPATH='/usr/local/lib/ksh'
+FPATH='/home/paul/local/lib/ksh'
 PATH='/sbin:/bin:/usr/sbin:/usr/bin'
 RUNDIR=${HOME}
 CFG="${HOME}/.tcshrc"
-
 Trace=false
 TestFlg=false
-
 export PATH=$PATH
 autoload
 

@@ -1,7 +1,7 @@
 #!/bin/ksh 
 
 PROG='grabopenbsd.ksh'
-FPATH='/usr/local/lib/ksh'
+FPATH='/home/paul/local/lib/ksh'
 PATH='/sbin:/bin:/usr/sbin:/usr/bin'
 BASEURL='https://mirrors.ocf.berkeley.edu/pub/OpenBSD'
 ARCH='amd64' # or i386

@@ -1,7 +1,7 @@
 #!/bin/ksh
 
 PROG='ipfind.ksh'
-FPATH='/usr/local/lib/ksh'
+FPATH='/home/paul/local/lib/ksh'
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
 Trace=false

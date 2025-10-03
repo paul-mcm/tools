@@ -1,7 +1,7 @@
 #!/bin/ksh
 
 PROG='drop_tcp.ksh'
-FPATH='/usr/local/lib/ksh'
+FPATH='/home/paul/local/lib/ksh'
 PATH='/sbin:/bin:/usr/sbin:/usr/bin:'
 RUNDIR="/tmp"
 NSTAT='/usr/bin/netstat -nf inet -p tcp'

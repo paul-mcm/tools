@@ -1,6 +1,6 @@
 #!/bin/ksh
 # BUILD CSCOPE CROSS REFERENCE AND CTAGS FILE IN $PWD
-FPATH='/usr/local/lib/ksh'
+FPATH='/home/paul/local/lib/ksh'
 FILES='cscope.files'
 TAGS_FILE='ctags'
 Trace=false
