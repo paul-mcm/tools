@@ -7,8 +7,8 @@ INCLUDES = ${LIBDIR}/include/
 
 objects = ${HOME}/dev/lib/C/iprange/iprange.o
 
-iprange.o: iprange.h
-	clang -fPIC -I${INCLUDES} -c -o iprange.o ${LIBDIR}/iprange.c
+iprange.o:
+	clang -fPIC -I${INCLUDES} -c -o ${LIBDIR}/iprange.o ${LIBDIR}/iprange.c
 
 all: $(objects)
 	$(CC) -I${INCLUDES} $(objects) -o iprange iprange.c
