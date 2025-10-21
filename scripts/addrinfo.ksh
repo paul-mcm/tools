@@ -1,13 +1,11 @@
 #!/bin/ksh
 
 PROG='addrinfo.ksh'
-FPATH='/usr/local/lib/ksh'
+FPATH='/home/paul/local/lib/ksh'
 PATH='/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:'
-
+export PATH=$PATH
 Trace=false
 TestFlg=false
-
-export PATH=$PATH
 autoload
 
 function help {
@@ -30,7 +28,7 @@ ENDUSAGE
 }
 
 function oct2bits {
-    $Trace && set -x
+    ${Trace-:false} && set -x
     typeset o="$1"
     typeset f="${2:-128}"
 
@@ -46,7 +44,7 @@ function oct2bits {
 }
 
 function ip2bits {
-    $Trace && set -x
+    ${Trace-:false} && set -x
     typeset ip="$1"
     typeset octs
     typeset b_str=  
@@ -82,7 +80,7 @@ cidr="$@"
 
 validate_ipv4_cidr "$cidr" || die "invalid ipv4/CIDR"
 
-set -A range $(/usr/local/bin/iprange $cidr)
+set -A range $(/home/paul/local/bin/iprange $cidr)
 
 echo "${range[0]}				${range[1]}"
 echo "$( ip2bits ${range[0]} )	$( ip2bits ${range[1]} )"
