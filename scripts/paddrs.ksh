@@ -1,32 +1,34 @@
 #!/bin/ksh
 
-FPATH="${HOME}/scripts/lib"
-Prog=${0##*/}
+PROG='paddrs.ksh'
+FPATH='/home/paul/local/lib/ksh'
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
 Trace=false
-Max=1024
+TestFlg=false
+Max=16384
 Cnt=0
+export PATH=$PATH
+autoload
 
 function help {
-    echo
-    cat >&2 <<END_USAGE
-    $Prog	- 	print $Max ipv4 addrs in network range
-			for given CIDR address.
+    cat >&2 <<ENDUSAGE
 
-    $Prog [-mth] CIDR_address
+$PROG - print range of ipv4 addrs in CIDR address
 
-        -h      -       this 'help' section
-	-m	-	set max number of addrs to print
-			Defaults to 1024
-        -t      -       Debug
+Usage: $PROG [-hx] [-m MAX] CIDR_address
 
-END_USAGE
-    exit
+Options:
+    -h        -   this 'help' section
+    -m        -   set max number of addrs to print
+		  Defaults 16384 (/18)
+    -x        -   turn on verbose tracing
+
+ENDUSAGE
+     exit
 }
 
-
-
 function poct {
-    $Trace && set -x
+    ${Trace-:false} && set -x
     typeset prefx=$1	#prefix string
     typeset h=$2	#high value
     typeset l=$3	#low val
@@ -41,19 +43,17 @@ function poct {
 	((i++))
     done
 
-    while ( [ $i -lt $h ] )
+    while ( [ $i -le $h ] )
     do
 	echo ${prefx}.$i
 	((i++))
 	((Cnt++))	
-	[[ $Cnt -eq $Max ]] && \
-	    echo "Reached Max: $Cnt" && \
-	    exit
+	[[ $Cnt -eq $Max ]] && die "Reached Max: $Cnt"
     done
     return
 }
 
-while getopts :hm:t VAR 2> /dev/null
+while getopts :hm:x VAR 2> /dev/null
 do
     case $VAR in
 	h) help
@@ -61,11 +61,13 @@ do
 	   ;;
 	m) Max=$OPTARG
 	   ;;
-	t) Trace=true
+	t) TestFlg=true
+	   ;;
+	x) Trace=true
 	   PS4='$LINENO	'
 	   set -x
 	   ;;
-	?) echo "Usage: [-t] [-m max] CIDR_addr"
+	?) echo "Usage: [-x] [-m max] CIDR_addr"
 	   exit
 	   ;;
     esac
@@ -73,7 +75,9 @@ done
 shift $(($OPTIND - 1))
 cidr=$@
 
-set -A hi_lo_ips $(${HOME}/bin/iprange $cidr)
+validate_ipv4_cidr $cidr || die "bad CIDR address"
+
+set -A hi_lo_ips $(/home/paul/local/bin/iprange $cidr)
 set -A octs $(parse_octets $cidr)
 h_oct=$(( ${cidr##*/} / 8 ))
 
