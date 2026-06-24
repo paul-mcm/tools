@@ -8,6 +8,8 @@ TestFlg=false
 Trace=false
 autoload
 
+set -A DAYS Su Mo Tu We Th Fr Sa
+
 while getopts :f:tx OPT 2> /dev/null
 do
     case $OPT in
@@ -35,68 +37,61 @@ for l in $(/usr/local/bin/html2text -width 150 $infile | \
 	sed -e 's/^[^a-zA-Z]\{1,\}//' -e 's/[ ]\{2,\}/,/g' | \
 	awk -v OFS=, -F, '{print $5, $6, $7, $2, $1 }' )
 do
-    if [[ $l = Day* ]]
-    then
-	continue
-    fi
+    [[ $l = Day* ]] && continue
+    IFS=,
+    set -- $l 
+    wday=$1; start_t=$2; len=$3; first_last="$4,$5"
 
-    day=${l%%,*}
-    tmp=${l#*,}
-    td=${tmp%,*,*}
-    len=${td#*,}
-
-    tmp=${td%,*}
-    str_h=${tmp%:*}
-    tmp=${td#*:}
+    # set start hour/min
+    str_h=${start_t%:*}; 
+    tmp=${start_t#*:}
     str_m=${tmp% *}
 
-    if [[ $td = *PM* && $str_h -ne 12 ]]
-    then
-        ((str_h+=12))
-    fi
-
+    # set stop hour/min 
+    [[ $start_t = *PM* && $str_h -lt 12 ]] && \
+	(( str_h+=12 ))
     (( stp_t = (str_h * 60) + str_m + len))
     (( stp_m = stp_t % 60 )) 
     (( stp_h = $stp_t / 60 ))
+
+    [[ $first_last = [A-Za-z]*\ [A-Za-z]* ]] && \
+	first_last=$(echo "$first_last" | sed 's/ /-/g')
 
     if [[ $stp_m -eq 0 ]]
     then
 	stp_m='00'
     fi
 
-    if [[ $day = Su ]]
+    if [[ $wday = 'Su' ]]
+    then
+	day=0
+    elif [[ $wday = 'Mo' ]]
     then
 	day=1
-    elif [[ $day = Mo ]]
+    elif [[ $wday = 'Tu' ]]
     then
 	day=2
-    elif [[ $day = Tu ]]
+    elif [[ $wday = 'We' ]]
     then
 	day=3
-    elif [[ $day = We ]]
+    elif [[ $wday == 'Th' ]]
     then
 	day=4
-    elif [[ $day == Th ]]
+    elif [[ $wday == 'Fr' ]]
     then
 	day=5
-    elif [[ $day == Fr ]]
+    elif [[ $wday == 'Sa' ]]
     then
 	day=6
-    elif [[ $day == Sa ]]
-    then
-	day=7
     fi
 
-    echo "L: $l"
-    output=$(echo $l | awk -F, -v OFS=, -v shr=$str_h -v smin=$str_m -v ehr=$stp_h \
-	-v day=$day -v emin=$stp_m -v len=$len '{print day, $1, len, shr, smin, ehr, emin, $4, $5}')
+    output="${day},${DAYS[$day]},${len},${str_h},${str_m},${stp_h},${stp_m},${first_last}"
+
     lessons="${lessons} $output"
 done
 
 IFS=$OFS
 
-printf "%s\n" ${lessons[@]} | /usr/bin/sort -n -t , -k 1 -k 4 -k 5 -o $outfile
+echo "Day,Wday,Length,Start Hr, Start Min, Stop Hr, Stop Min, Last, First" >> $outfile
 
-
-
-
+printf "%s\n" ${lessons[@]} | /usr/bin/sort -n -t , -k 1 -k 4 -k 5 #>> $outfile
