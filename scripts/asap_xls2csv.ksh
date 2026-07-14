@@ -17,7 +17,9 @@ function make_csv_file {
     typeset tmp
  
     tmp=$(basename $infile)
-    outfile="${OUTDIR}/${tmp%.xls}.csv"
+    ${TestFlg:-false} && outfile='/dev/stdout' || \
+	outfile="${OUTDIR}/${tmp%.xls}.csv"
+
     OFS=$IFS
     IFS="
 "
@@ -27,7 +29,7 @@ function make_csv_file {
     do
 	[[ $l = Day* ]] && continue
 	IFS=,
-	set -- $l 
+	set -- $l
 	wday=$1; start_t=$2; len=$3; first_last="$4,$5"
 
 	# set start hour/min
@@ -77,8 +79,8 @@ function make_csv_file {
 	lessons="${lessons} $output"
     done
     IFS=$OFS
-    echo "Day,Wday,Length,Start Hr,Start Min,Stop Hr,Stop Min,Last,First" >> $outfile
-    printf "%s\n" ${lessons[@]} | /usr/bin/sort -n -t , -k 1 -k 4 -k 5 >> $outfile
+    runcmd 'echo Day,Wday,Length,Start Hr,Start Min,Stop Hr,Stop Min,Last,First' >> $outfile
+    runcmd "printf "%s\n" ${lessons[@]} | /usr/bin/sort -n -t , -k 1 -k 4 -k 5" >> $outfile
 }
 
 while getopts :d:f:tx OPT 2> /dev/null
@@ -88,7 +90,7 @@ do
            ;;
 	d) indir=$OPTARG
 	   ;;
-        t) TestFlg=true 
+        t) TestFlg=true
            ;;
         x) TestFlg=true
            Trace=true
@@ -100,6 +102,9 @@ do
            ;;
     esac
 done
+
+[[ ! -f /usr/local/bin/html2text ]] && die "html2text not found"
+
 
 if [[ -f $infile ]]
 then
